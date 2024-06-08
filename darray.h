@@ -7,7 +7,7 @@
         fprintf(stderr, "%s:%s\n", desc, msg);                              \
         exit(EXIT_FAILURE);                                                 \
     } while (0);                                                            \
-}
+}                                                                           \
 
 /*  
     NOTE: Add this macro before including "darray.h" DARRAY_IMPLEMENTATION_
