@@ -16,21 +16,16 @@
         - cap:  capacity
 */
 
+/* Dependencies */
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define INITIAL_DARRAY_CAP 1                                    /* Default capacity of array */
-#define DARRAY_GROWTH_FACTOR 1.2                                /* Array grows by 20% every time it gets full */
+#define DARRAY_GROWTH_FACTOR 2                                  /* Array grows by twice every time it gets full */
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))           /* Get the size of any C array */
 
-typedef enum
-{   
-    INT,
-    FLOAT,
-    DOUBLE,
-    CHAR
-} da_type;
 
 typedef struct
 {
@@ -42,6 +37,17 @@ typedef struct
 
 /* Functions */
 darray *_da_create(size_t cap);
+void da_destroy(darray *da);
+bool is_da_full(darray *da);
+bool is_da_empty(darray *da);
+void da_append(darray *da, int el);
+void da_pop(darray *da);
+void da_shift_right(darray *da, size_t shiftBy);
+void da_randomize(darray *da, size_t len, const int MIN, const int MAX);
+void da_remove(darray *da, int idx);
+void da_print(darray *da);
+void da_print_entire(darray *da);
+
 #define da_init() _da_create(INITIAL_DARRAY_CAP)
 
 #endif // DARRAY_H_
@@ -74,22 +80,22 @@ void da_destroy(darray *da)
     }
 }
 
-bool IsDaFull(darray *da)
+bool is_da_full(darray *da)
 {   
     return da->cap == da->len;
 }
 
-bool IsDaEmpty(darray *da)
+bool is_da_empty(darray *da)
 {
     return da->len == 0;
 }
 
 void da_append(darray *da, int el)
 {
-    if (IsDaFull(da))
+    if (is_da_full(da))
     {
-        da->cap += (size_t)(da->cap * DARRAY_GROWTH_FACTOR);
-        da->items = realloc(da->items, da->cap * sizeof(int));
+        da->cap *= (size_t)(DARRAY_GROWTH_FACTOR);
+        da->items = (int *) realloc(da->items, da->cap * sizeof(int));
         if (!da->items)
             HANDLE_ERR("DA_ITEM_REALLOC_ERR", "could not reallocate memory for items of array.");
     }
@@ -98,19 +104,19 @@ void da_append(darray *da, int el)
 
 void da_pop(darray *da)
 {   
-    if (!IsDaEmpty(da))
+    if (!is_da_empty(da))
     {
         return;
     } 
     else 
     {
         da->items[da->len--] = 0;
-        da->cap--;
     }
 }
 
 void da_shift_left(darray *da, size_t shiftBy)
-{       
+{   
+    if (da->len == 0) return;
     shiftBy %= da->len;
     for (size_t i = 0; i < shiftBy; ++i)
     {
@@ -124,7 +130,8 @@ void da_shift_left(darray *da, size_t shiftBy)
 }
 
 void da_shift_right(darray *da, size_t shiftBy)
-{       
+{   
+    if (da->len == 0) return;
     shiftBy %= da->len;
     for (size_t i = 0; i < shiftBy; ++i)
     {
@@ -137,21 +144,30 @@ void da_shift_right(darray *da, size_t shiftBy)
     }
 }
 
-void da_remove(darray *da, unsigned idx)
+void da_randomize(darray *da, size_t len, const int MIN, const int MAX)
 {
-    if (idx < 0 && idx >= da->len)
+    for (int i = 0; i < len; ++i)
+    {   
+        int el = rand() % (MAX - MIN + 1) + MIN;
+        da_append(da, el);
+    }
+}
+
+void da_remove(darray *da, int idx)
+{   
+    if (idx < -da->len && idx >= da->len)
     {
         HANDLE_ERR("DA_IDX_OUT_OF_BOUNDS", "index given exceeds or preceeds the lenght of the array.");
     }
     else 
     {   
+        if (idx < 0) idx = da->len - idx;             // support for reverse indexing
         int temp = da->items[idx];
         for (size_t i = idx; i < da->len; ++i)
         {
             da->items[i] = da->items[i + 1];
         }
         da->items[da->len - 1] = 0;
-        da->cap--;
         da->len--;
     }
 }
@@ -181,4 +197,3 @@ void da_print_entire(darray *da)
 }
 
 #endif // DARRAY_IMPLEMENTATION_
-
