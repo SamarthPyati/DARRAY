@@ -1,7 +1,8 @@
 # DARRAY (Dynamic Array)
 A dynamic array implementation in C.
 
-> Note: As of now, the dynamic array is only compatible with `int` types. I will be working on making a generalised implementation which is compatible with any type.
+> [!Note] 
+> As of now, the dynamic array is only compatible with `int` types. I will be working on making a generalised implementation which is compatible with any type.
 
 ## Features
 *   Automatic resizing of array 

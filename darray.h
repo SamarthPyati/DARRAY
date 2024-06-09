@@ -10,26 +10,25 @@
 }                                                                           \
 
 /*  
-    NOTE: Add this macro before including "darray.h" DARRAY_IMPLEMENTATION_
     TERMS:
-        - da:   dynamic array
-        - cap:  capacity
+        - da  :  dynamic array
+        - cap :  capacity
 */
 
 /* Dependencies */
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
 
+/* Constants */
 #define INITIAL_DARRAY_CAP 1                                    /* Default capacity of array */
 #define DARRAY_GROWTH_FACTOR 2                                  /* Array grows by twice every time it gets full */
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))           /* Get the size of any C array */
-
 
 typedef struct
 {
-    int *items;
+    int *items;         
     size_t cap;         /* array capacity */
     size_t len;         /* array lenght */
 } darray;
@@ -42,13 +41,17 @@ bool is_da_full(darray *da);
 bool is_da_empty(darray *da);
 void da_append(darray *da, int el);
 void da_pop(darray *da);
+void da_insert(darray *da, int idx, int el);
 void da_shift_right(darray *da, size_t shiftBy);
+void da_shift_left(darray *da, size_t shiftBy);
 void da_randomize(darray *da, size_t len, const int MIN, const int MAX);
 void da_remove(darray *da, int idx);
+void da_copy(darray *dest, const darray *src);
 void da_print(darray *da);
 void da_print_entire(darray *da);
 
-#define da_init() _da_create(INITIAL_DARRAY_CAP)
+#define da_init() _da_create(INITIAL_DARRAY_CAP)                /* Create the array with default capacity */
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))           /* Get the length of any C array */
 
 #endif // DARRAY_H_
 
@@ -146,16 +149,26 @@ void da_shift_right(darray *da, size_t shiftBy)
 
 void da_randomize(darray *da, size_t len, const int MIN, const int MAX)
 {
-    for (int i = 0; i < len; ++i)
+    for (size_t i = 0; i < len; ++i)
     {   
         int el = rand() % (MAX - MIN + 1) + MIN;
         da_append(da, el);
     }
 }
 
+int da_get(darray *da, int idx)
+{
+    if (idx < 0) idx = da->len + idx;                // support for reverse indexing
+    if (idx < 0 || idx >= da->len)
+    {
+        HANDLE_ERR("DA_IDX_OUT_OF_BOUNDS", "index given exceeds or preceeds the lenght of the array.");
+    }
+    return da->items[idx];
+}
+
 void da_remove(darray *da, int idx)
 {   
-    if (idx < -da->len && idx >= da->len)
+    if (idx < -da->len || idx >= da->len)
     {
         HANDLE_ERR("DA_IDX_OUT_OF_BOUNDS", "index given exceeds or preceeds the lenght of the array.");
     }
@@ -170,6 +183,18 @@ void da_remove(darray *da, int idx)
         da->items[da->len - 1] = 0;
         da->len--;
     }
+}
+
+void da_copy(darray *dest, const darray *src)
+{   
+    dest->len = src->len;
+    dest->cap = src->cap;
+    dest->items = (int *) realloc(dest->items, src->cap * sizeof(int));
+    if (!dest->items)
+    {
+        HANDLE_ERR("DA_ITEM_REALLOC_ERR", "could not reallocate memory for items of array.");
+    }
+    memcpy(dest->items, src->items, src->len * sizeof(int));
 }
 
 void da_print(darray *da)
@@ -194,6 +219,68 @@ void da_print_entire(darray *da)
             printf(", ");
     }
     printf("]\n");
+}
+
+void da_insert(darray *da, int idx, int el)
+{
+    if (idx < 0 || idx > da->len)
+    {
+        HANDLE_ERR("DA_IDX_OUT_OF_BOUNDS", "index given exceeds or preceeds the lenght of the array.");
+    }
+    if (is_da_full(da))
+    {
+        da->cap *= (size_t) DARRAY_GROWTH_FACTOR;
+        da->items = (int *)realloc(da->items, da->cap * sizeof(int));
+        if (da->items == NULL)
+            HANDLE_ERR("DA_ITEM_REALLOC_ERR", "could not reallocate memory for items of array.");
+    }
+    else
+    {   
+        // shift the all the elements towards the right
+        for (size_t i = da->len; i > idx; i--)
+        {
+            da->items[i] = da->items[i - 1];
+        }
+        da->items[idx] = el;
+        da->len++;
+    }
+}
+
+typedef enum
+{
+    ASC, 
+    DSC, 
+} sort_modes;
+
+int ascending(const void *a, const void *b)
+{
+    return *(int *)a - *(int *)b;
+}
+
+int descending(const void *a, const void *b)
+{
+    return *(int *)b - *(int *)a;
+}
+
+darray *da_sort(darray *da, sort_modes mode)
+{       
+    darray *sorted = da_init();
+    da_copy(sorted, da);
+    qsort(sorted->items, sorted->len, sizeof(*sorted->items), mode == ASC ? ascending : descending );
+    return sorted;  
+}
+
+void da_reverse(darray *da, void (*swap)(const void *, const void *))
+{
+    for (int i = 0; i < da->len / 2; ++i)
+    {
+        swap(&da->items[i], &da->items[da->len - i - 1]);
+    }
+}
+
+void da_min_max(darray *da, int *min, int *max)
+{
+    darray *sorted = da_sort(da, ASC);
 }
 
 #endif // DARRAY_IMPLEMENTATION_
