@@ -264,7 +264,7 @@ void da_reverse(darray *da)
 
 int da_get_max(const darray *da)
 {
-    darray *sorted = da_sort(da, ASC);
+    darray *sorted = da_sort(da, ASC);  
     int max = da_get(sorted, -1);
     da_destroy(sorted);
     return max;
